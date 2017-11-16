@@ -23,6 +23,8 @@ EXTRA_OECMAKE = " \
     -DLLVM_TARGET_ARCH=${TARGET_ARCH} \
 "
 
+DEPENDS += "gettext-native"
+
 # The debug symbols are huge here (>2GB) so suppress them since they
 # provide almost no value. If you really need them then override this
 INHIBIT_PACKAGE_DEBUG_SPLIT = "1"
