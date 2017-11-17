@@ -40,10 +40,11 @@ update_repo() {
 		git fetch origin || die "unable to fetch ${uri}"
 	else
 		echo "Cloning '${path}'"
-		if [ -z "${GIT_LOCAL_REF_DIR}" ]; then
-			git clone ${uri} ${path} || die "unable to clone ${uri}"
+		if [ -d "${GIT_LOCAL_REF_DIR}" ]; then
+			git clone --reference ${GIT_LOCAL_REF_DIR}/`basename ${path}` \
+				${uri} ${path} || die "unable to clone ${uri}"
 		else
-			git clone --reference ${GIT_LOCAL_REF_DIR}/`basename ${path}` ${uri} ${path}
+			git clone ${uri} ${path} || die "unable to clone ${uri}"
 		fi
 		pushd ${path} > /dev/null
 	fi

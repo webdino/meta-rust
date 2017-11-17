@@ -4,31 +4,19 @@ SECTION = "devel"
 LICENSE = "MIT | Apache-2.0"
 LIC_FILES_CHKSUM ="file://COPYRIGHT;md5=43e1f1fb9c0ee3af66693d8c4fecafa8"
 
-require rust-source-${PV}.inc
-
-S = "${WORKDIR}/rustc-${PV}"
-
-CARGO_INDEX_COMMIT = "6127fc24b0b6fe73fe4d339817fbf000b9a798a2"
-
-SRC_URI += "\
-	crate://crates.io/gcc/0.3.27 \
-	crate-index://crates.io/${CARGO_INDEX_COMMIT} \
-"
-
-DEPENDS += "compiler-rt (=${PV})"
-
 RUSTLIB_DEP = ""
 inherit cargo
 
 # Needed so cargo can find libbacktrace
 RUSTFLAGS += "-L ${STAGING_LIBDIR}"
 
-S = "${WORKDIR}/rustc-${PV}"
-
 do_compile_prepend () {
     cd ${S}/src/rustc/std_shim
     export CARGO_TARGET_DIR="${B}"
+    # For Rust 1.12.1 and lower
     export RUSTC_BOOTSTRAP_KEY="${RS_KEY}"
+    # For Rust 1.13.0 and newer
+    export RUSTC_BOOTSTRAP="1"
 }
 
 do_install () {

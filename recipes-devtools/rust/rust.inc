@@ -10,8 +10,6 @@ SRC_URI = "\
 	https://static.rust-lang.org/dist/${RUST_SNAPSHOT}.tar.gz;name=rust-snapshot \
     "
 
-S = "${WORKDIR}/rustc-${PV}"
-
 DEPENDS += "file-native"
 
 # We generate local targets, and need to be able to locate them
@@ -177,7 +175,7 @@ def arch_to_rust_target_arch(arch):
 
 # generates our target CPU value
 def llvm_cpu(d):
-    cpu = d.getVar('TUNE_PKGARCH', True)
+    cpu = d.getVar('PACKAGE_ARCH', True)
     target = d.getVar('TRANSLATED_TARGET_ARCH', True)
 
     trans = {}

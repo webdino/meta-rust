@@ -1,6 +1,5 @@
 require rust.inc
 inherit cross
-require rust-source-${PV}.inc
 
 # Otherwise we'll depend on what we provide
 INHIBIT_DEFAULT_RUST_DEPS = "1"
