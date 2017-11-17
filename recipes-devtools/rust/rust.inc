@@ -237,7 +237,7 @@ def rust_gen_target(d, thing, wd):
     # Don't use jemalloc as it doesn't work for many targets.
     # https://github.com/rust-lang/rust/pull/37392
     # From 1.20.0 and forward, system allocator is the default.
-    if LooseVersion(d.getVar("PV")) < LooseVersion("1.20.0"):
+    if LooseVersion(d.getVar("PV", True)) < LooseVersion("1.20.0"):
         tspec['exe-allocation-crate'] = "alloc_system"
         tspec['lib-allocation-crate'] = "alloc_system"
 
