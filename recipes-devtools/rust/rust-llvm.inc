@@ -8,7 +8,7 @@ LIC_FILES_CHKSUM = "file://LICENSE.TXT;md5=4c0bc17c954e99fd547528d938832bfa"
 inherit cmake pythonnative
 
 EXTRA_OECMAKE = " \
-    -DLLVM_TARGETS_TO_BUILD='X86;ARM;AArch64;PowerPC' \
+    -DLLVM_TARGETS_TO_BUILD='X86;ARM;AArch64;PowerPC;Mips' \
     -DLLVM_ENABLE_ASSERTIONS=OFF \
     -DLLVM_BUILD_DOCS=OFF \
     -DLLVM_ENABLE_TERMINFO=OFF \
@@ -35,10 +35,6 @@ do_compile_prepend_class-target() {
 
     # Fix the hardcoded libdir in llvm-config
     sed -i 's:/lib\>:/${baselib}:g' ${S}/tools/llvm-config/llvm-config.cpp
-}
-
-do_compile() {
-    oe_runmake
 }
 
 do_install_append_class-target() {

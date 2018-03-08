@@ -33,7 +33,7 @@ def llvm_features_from_tune(d):
     f = []
     feat = d.getVar('TUNE_FEATURES', True)
     if not feat:
-        return ""
+        return []
     feat = frozenset(feat.split())
 
     if 'vfpv4' in feat:
@@ -51,6 +51,12 @@ def llvm_features_from_tune(d):
 
     if 'aarch64' in feat:
         f.append("+v8")
+
+    if 'mips32' in feat:
+        f.append("+mips32")
+
+    if 'mips32r2' in feat:
+        f.append("+mips32r2")
 
     v7=frozenset(['armv7a', 'armv7r', 'armv7m', 'armv7ve'])
     if not feat.isdisjoint(v7):
@@ -77,12 +83,7 @@ def llvm_features_from_tune(d):
     if 'cortexa17' in feat:
         f.append("+a17")
 
-    # Seems like it could be infered by the lack of vfp options, but we'll
-    # include it anyhow
-    if 'soft' in feat:
-        f.append("+soft-float")
-
-    return ','.join(f)
+    return f
 
 # TARGET_CC_ARCH changes from build/cross/target so it'll do the right thing
 # this should go away when https://github.com/rust-lang/rust/pull/31709 is
@@ -91,7 +92,7 @@ def llvm_features_from_cc_arch(d):
     f = []
     feat = d.getVar('TARGET_CC_ARCH', True)
     if not feat:
-        return ""
+        return []
     feat = frozenset(feat.split())
 
     if '-mmmx' in feat:
@@ -115,13 +116,26 @@ def llvm_features_from_cc_arch(d):
     if '-mavx2' in feat:
         f.append("+avx2")
 
-    return ','.join(f)
+    return f
+
+def llvm_features_from_target_fpu(d):
+    # TARGET_FPU can be hard or soft. +soft-float tell llvm to use soft float
+    # ABI. There is no option for hard.
+
+    fpu = d.getVar('TARGET_FPU', True)
+    return ["+soft-float"] if fpu == "soft" else []
+
+def llvm_features(d):
+    return ','.join(llvm_features_from_tune(d) +
+                    llvm_features_from_cc_arch(d) +
+                    llvm_features_from_target_fpu(d))
 
 ## arm-unknown-linux-gnueabihf
 DATA_LAYOUT[arm] = "e-m:e-p:32:32-i64:64-v128:64:128-a:0:32-n32-S64"
 LLVM_TARGET[arm] = "${RUST_TARGET_SYS}"
 TARGET_ENDIAN[arm] = "little"
 TARGET_POINTER_WIDTH[arm] = "32"
+TARGET_C_INT_WIDTH[arm] = "32"
 MAX_ATOMIC_WIDTH[arm] = "64"
 FEATURES[arm] = "+v6,+vfp2"
 
@@ -130,6 +144,7 @@ DATA_LAYOUT[aarch64] = "e-m:e-i8:8:32-i16:16:32-i64:64-i128:128-n32:64-S128"
 LLVM_TARGET[aarch64] = "aarch64-unknown-linux-gnu"
 TARGET_ENDIAN[aarch64] = "little"
 TARGET_POINTER_WIDTH[aarch64] = "64"
+TARGET_C_INT_WIDTH[aarch64] = "64"
 MAX_ATOMIC_WIDTH[aarch64] = "128"
 
 ## x86_64-unknown-linux-gnu
@@ -137,6 +152,7 @@ DATA_LAYOUT[x86_64] = "e-m:e-i64:64-f80:128-n8:16:32:64-S128"
 LLVM_TARGET[x86_64] = "x86_64-unknown-linux-gnu"
 TARGET_ENDIAN[x86_64] = "little"
 TARGET_POINTER_WIDTH[x86_64] = "64"
+TARGET_C_INT_WIDTH[x86_64] = "64"
 MAX_ATOMIC_WIDTH[x86_64] = "64"
 
 ## i686-unknown-linux-gnu
@@ -144,6 +160,7 @@ DATA_LAYOUT[i686] = "e-m:e-p:32:32-f64:32:64-f80:32-n8:16:32-S128"
 LLVM_TARGET[i686] = "i686-unknown-linux-gnu"
 TARGET_ENDIAN[i686] = "little"
 TARGET_POINTER_WIDTH[i686] = "32"
+TARGET_C_INT_WIDTH[i686] = "32"
 MAX_ATOMIC_WIDTH[i686] = "64"
 
 ## XXX: a bit of a hack so qemux86 builds, clone of i686-unknown-linux-gnu above
@@ -151,7 +168,24 @@ DATA_LAYOUT[i586] = "e-m:e-p:32:32-f64:32:64-f80:32-n8:16:32-S128"
 LLVM_TARGET[i586] = "i586-unknown-linux-gnu"
 TARGET_ENDIAN[i586] = "little"
 TARGET_POINTER_WIDTH[i586] = "32"
+TARGET_C_INT_WIDTH[i586] = "32"
 MAX_ATOMIC_WIDTH[i586] = "64"
+
+## mips-unknown-linux-gnu
+DATA_LAYOUT[mips] = "E-m:m-p:32:32-i8:8:32-i16:16:32-i64:64-n32-S64"
+LLVM_TARGET[mips] = "${RUST_TARGET_SYS}"
+TARGET_ENDIAN[mips] = "big"
+TARGET_POINTER_WIDTH[mips] = "32"
+TARGET_C_INT_WIDTH[mips] = "32"
+MAX_ATOMIC_WIDTH[mips] = "32"
+
+## mipsel-unknown-linux-gnu
+DATA_LAYOUT[mipsel] = "e-m:m-p:32:32-i8:8:32-i16:16:32-i64:64-n32-S64"
+LLVM_TARGET[mipsel] = "${RUST_TARGET_SYS}"
+TARGET_ENDIAN[mipsel] = "little"
+TARGET_POINTER_WIDTH[mipsel] = "32"
+TARGET_C_INT_WIDTH[mipsel] = "32"
+MAX_ATOMIC_WIDTH[mipsel] = "32"
 
 def arch_for(d, thing):
     return d.getVar('{}_ARCH'.format(thing), True)
@@ -167,6 +201,8 @@ def prefix_for(d, thing):
 def arch_to_rust_target_arch(arch):
     if arch == "i586" or arch == "i686":
         return "x86"
+    elif arch == "mipsel":
+        return "mips"
     else:
         return arch
 
@@ -182,17 +218,26 @@ def llvm_cpu(d):
     trans['i686'] = "i686"
     trans['i586'] = "i586"
 
+    if target in ["mips", "mipsel"]:
+        feat = frozenset(d.getVar('TUNE_FEATURES', True).split())
+        if "mips32r2" in feat:
+            trans['mipsel'] = "mips32r2"
+            trans['mips'] = "mips32r2"
+        elif "mips32" in feat:
+            trans['mipsel'] = "mips32"
+            trans['mips'] = "mips32"
+
     try:
         return trans[cpu]
     except:
         return trans.get(target, "generic")
 
 TARGET_LLVM_CPU="${@llvm_cpu(d)}"
-TARGET_LLVM_FEATURES = "${@llvm_features_from_tune(d)} ${@llvm_features_from_cc_arch(d)}"
+TARGET_LLVM_FEATURES = "${@llvm_features(d)}"
 
 # class-native implies TARGET=HOST, and TUNE_FEATURES only describes the real
 # (original) target.
-TARGET_LLVM_FEATURES_class-native = "${@llvm_features_from_cc_arch(d)}"
+TARGET_LLVM_FEATURES_class-native = "${@','.join(llvm_features_from_cc_arch(d))}"
 
 def rust_gen_target(d, thing, wd):
     import json
@@ -215,6 +260,7 @@ def rust_gen_target(d, thing, wd):
     tspec['data-layout'] = d.getVarFlag('DATA_LAYOUT', arch, True)
     tspec['max-atomic-width'] = d.getVarFlag('MAX_ATOMIC_WIDTH', arch, True)
     tspec['target-pointer-width'] = d.getVarFlag('TARGET_POINTER_WIDTH', arch, True)
+    tspec['target-c-int-width'] = d.getVarFlag('TARGET_C_INT_WIDTH', arch, True)
     tspec['target-endian'] = d.getVarFlag('TARGET_ENDIAN', arch, True)
     tspec['arch'] = arch_to_rust_target_arch(arch)
     tspec['os'] = "linux"
@@ -233,6 +279,7 @@ def rust_gen_target(d, thing, wd):
     tspec['has-rpath'] = True
     tspec['has-elf-tls'] = True
     tspec['position-independent-executables'] = True
+    tspec['panic-strategy'] = d.getVar("RUST_PANIC_STRATEGY", True)
 
     # Don't use jemalloc as it doesn't work for many targets.
     # https://github.com/rust-lang/rust/pull/37392
@@ -267,7 +314,7 @@ do_rust_setup_snapshot () {
     # Some versions of rust (e.g. 1.18.0) tries to find cargo in stage0/bin/cargo
     # and fail without it there.
     mkdir -p ${RUSTSRC}/build/${BUILD_SYS}
-    ln -s ${WORKDIR}/rust-snapshot/ ${RUSTSRC}/build/${BUILD_SYS}/stage0
+    ln -sf ${WORKDIR}/rust-snapshot/ ${RUSTSRC}/build/${BUILD_SYS}/stage0
 }
 addtask rust_setup_snapshot after do_unpack before do_configure
 do_rust_setup_snapshot[dirs] += "${WORKDIR}/rust-snapshot"
