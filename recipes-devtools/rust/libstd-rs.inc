@@ -4,7 +4,7 @@ SECTION = "devel"
 LICENSE = "MIT | Apache-2.0"
 
 RUSTLIB_DEP = ""
-inherit cargo
+inherit cargo gettext
 
 # Needed so cargo can find libbacktrace
 RUSTFLAGS += "-L ${STAGING_LIBDIR} -C link-arg=-Wl,-soname,libstd.so"
