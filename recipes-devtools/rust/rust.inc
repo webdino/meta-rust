@@ -34,7 +34,7 @@ setup_cargo_environment () {
 # don't want to use this for the host/build.
 def llvm_features_from_tune(d):
     f = []
-    feat = d.getVar('TUNE_FEATURES')
+    feat = d.getVar('TUNE_FEATURES', True)
     if not feat:
         return []
     feat = frozenset(feat.split())
@@ -70,7 +70,7 @@ def llvm_features_from_tune(d):
     if 'dsp' in feat:
         f.append("+dsp")
 
-    if d.getVar('ARM_THUMB_OPT') is "thumb":
+    if d.getVar('ARM_THUMB_OPT', True) is "thumb":
         if not feat.isdisjoint(v7):
             f.append("+thumb2")
         f.append("+thumb-mode")
@@ -93,7 +93,7 @@ def llvm_features_from_tune(d):
 # stable (1.9.0?)
 def llvm_features_from_cc_arch(d):
     f = []
-    feat = d.getVar('TARGET_CC_ARCH')
+    feat = d.getVar('TARGET_CC_ARCH', True)
     if not feat:
         return []
     feat = frozenset(feat.split())
@@ -191,13 +191,13 @@ TARGET_C_INT_WIDTH[mipsel] = "32"
 MAX_ATOMIC_WIDTH[mipsel] = "32"
 
 def arch_for(d, thing):
-    return d.getVar('{}_ARCH'.format(thing))
+    return d.getVar('{}_ARCH'.format(thing), True)
 
 def sys_for(d, thing):
-    return d.getVar('{}_SYS'.format(thing))
+    return d.getVar('{}_SYS'.format(thing), True)
 
 def prefix_for(d, thing):
-    return d.getVar('{}_PREFIX'.format(thing))
+    return d.getVar('{}_PREFIX'.format(thing), True)
 
 # Convert a normal arch (HOST_ARCH, TARGET_ARCH, BUILD_ARCH, etc) to something
 # rust's internals won't choke on.
@@ -211,8 +211,8 @@ def arch_to_rust_target_arch(arch):
 
 # generates our target CPU value
 def llvm_cpu(d):
-    cpu = d.getVar('PACKAGE_ARCH')
-    target = d.getVar('TRANSLATED_TARGET_ARCH')
+    cpu = d.getVar('PACKAGE_ARCH', True)
+    target = d.getVar('TRANSLATED_TARGET_ARCH', True)
 
     trans = {}
     trans['corei7-64'] = "corei7"
@@ -222,7 +222,7 @@ def llvm_cpu(d):
     trans['i586'] = "i586"
 
     if target in ["mips", "mipsel"]:
-        feat = frozenset(d.getVar('TUNE_FEATURES').split())
+        feat = frozenset(d.getVar('TUNE_FEATURES').split(), True)
         if "mips32r2" in feat:
             trans['mipsel'] = "mips32r2"
             trans['mips'] = "mips32r2"
@@ -252,8 +252,8 @@ def rust_gen_target(d, thing, wd):
     features = ""
     cpu = "generic"
     if thing is "TARGET":
-        features = d.getVar('TARGET_LLVM_FEATURES') or ""
-        cpu = d.getVar('TARGET_LLVM_CPU')
+        features = d.getVar('TARGET_LLVM_FEATURES', True) or ""
+        cpu = d.getVar('TARGET_LLVM_CPU', True)
     features = features or d.getVarFlag('FEATURES', arch) or ""
     features = features.strip()
 
@@ -285,12 +285,12 @@ def rust_gen_target(d, thing, wd):
     tspec['has-rpath'] = True
     tspec['has-elf-tls'] = True
     tspec['position-independent-executables'] = True
-    tspec['panic-strategy'] = d.getVar("RUST_PANIC_STRATEGY")
+    tspec['panic-strategy'] = d.getVar("RUST_PANIC_STRATEGY", True)
 
     # Don't use jemalloc as it doesn't work for many targets.
     # https://github.com/rust-lang/rust/pull/37392
     # From 1.20.0 and forward, system allocator is the default.
-    if LooseVersion(d.getVar("PV")) < LooseVersion("1.20.0"):
+    if LooseVersion(d.getVar("PV", True)) < LooseVersion("1.20.0"):
         tspec['exe-allocation-crate'] = "alloc_system"
         tspec['lib-allocation-crate'] = "alloc_system"
 
@@ -300,7 +300,7 @@ def rust_gen_target(d, thing, wd):
 
 
 python do_rust_gen_targets () {
-    wd = d.getVar('WORKDIR') + '/targets/'
+    wd = d.getVar('WORKDIR', True) + '/targets/'
     # It is important 'TARGET' is last here so that it overrides our less
     # informed choices for BUILD & HOST if TARGET happens to be the same as
     # either of them.

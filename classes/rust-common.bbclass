@@ -23,11 +23,11 @@ def determine_libc(d, thing):
     # HOST could be musl, but only if a compiler is built to be run on
     # target in which case HOST_SYS != BUILD_SYS.
     if thing == 'TARGET':
-        libc = d.getVar('RUST_LIBC')
-    elif thing == 'BUILD' and (d.getVar('HOST_SYS') != d.getVar('BUILD_SYS')):
-        libc = d.getVar('RUST_LIBC')
+        libc = d.getVar('RUST_LIBC', True)
+    elif thing == 'BUILD' and (d.getVar('HOST_SYS', True) != d.getVar('BUILD_SYS', True)):
+        libc = d.getVar('RUST_LIBC', True)
     else:
-        libc = d.getVar('RUST_LIBC_class-native')
+        libc = d.getVar('RUST_LIBC_class-native', True)
 
     return libc
 
@@ -40,10 +40,10 @@ def rust_base_triple(d, thing):
     Note that os is assumed to be some linux form
     '''
 
-    arch = d.getVar('{}_ARCH'.format(thing))
+    arch = d.getVar('{}_ARCH'.format(thing), True)
     # All the Yocto targets are Linux and are 'unknown'
     vendor = "-unknown"
-    os = d.getVar('{}_OS'.format(thing))
+    os = d.getVar('{}_OS'.format(thing), True)
     libc = determine_libc(d, thing)
 
     # Prefix with a dash and convert glibc -> gnu
