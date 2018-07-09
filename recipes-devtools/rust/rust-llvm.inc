@@ -21,6 +21,7 @@ EXTRA_OECMAKE = " \
     -DLLVM_BUILD_TESTS=OFF \
     -DLLVM_INCLUDE_TESTS=OFF \
     -DLLVM_TARGET_ARCH=${TARGET_ARCH} \
+    -DCMAKE_INSTALL_PREFIX:PATH=${libdir}/llvm-rust \
 "
 
 DEPENDS += "gettext-native"
