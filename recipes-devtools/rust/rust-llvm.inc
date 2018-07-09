@@ -5,7 +5,7 @@ S = "${RUSTSRC}/src/llvm"
 
 LIC_FILES_CHKSUM = "file://LICENSE.TXT;md5=4c0bc17c954e99fd547528d938832bfa"
 
-inherit cmake pythonnative
+inherit cmake pythonnative gettext
 
 EXTRA_OECMAKE = " \
     -DLLVM_TARGETS_TO_BUILD='X86;ARM;AArch64;PowerPC;Mips' \
@@ -23,6 +23,8 @@ EXTRA_OECMAKE = " \
     -DLLVM_TARGET_ARCH=${TARGET_ARCH} \
     -DCMAKE_INSTALL_PREFIX:PATH=${libdir}/llvm-rust \
 "
+
+DEPENDS += "gettext-native"
 
 # The debug symbols are huge here (>2GB) so suppress them since they
 # provide almost no value. If you really need them then override this

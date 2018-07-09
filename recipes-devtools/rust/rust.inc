@@ -6,7 +6,7 @@ LICENSE = "MIT | Apache-2.0"
 inherit rust
 inherit cargo_common
 
-DEPENDS += "file-native python-native"
+DEPENDS += "file-native python-native gettext-native"
 
 # We generate local targets, and need to be able to locate them
 export RUST_TARGET_PATH="${WORKDIR}/targets/"
