@@ -8,6 +8,10 @@ SRC_URI += " \
 	https://static.rust-lang.org/dist/${RUST_STD_SNAPSHOT_TARGET}.tar.gz;name=rust-std-snapshot-target-${RUST_TARGET_SYS};subdir=rust-snapshot-components \
 "
 
+# x86_64-unknown-linux-gnu hashes
+SRC_URI[rust-std-snapshot-target-x86_64-unknown-linux-gnu.md5sum] = "ad8b5a2e844eaa48760d53278de20da6"
+SRC_URI[rust-std-snapshot-target-x86_64-unknown-linux-gnu.sha256sum] = "bf421f0f3af569b89dcb8f6b1508bb39be9d5c29bd47282fd9630709c65b71f1"
+
 #i586-unknown-linux-gnu hashes
 SRC_URI[rust-std-snapshot-target-i586-unknown-linux-gnu.md5sum] = "cb640767cf48965bfd682492975a2f7f"
 SRC_URI[rust-std-snapshot-target-i586-unknown-linux-gnu.sha256sum] = "5322d81504db5d1224b9fe2d4a4e0a23e4ae2fcf3dc090db12678dc5f3111d63"
