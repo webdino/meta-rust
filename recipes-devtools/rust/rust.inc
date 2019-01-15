@@ -345,20 +345,20 @@ def rust_gen_target(d, thing, wd):
 
 
 def rustc_channel(d):
-    channel = d.expand("${RUSTC_BUILD_CHANNEL}")
-    if channel == "":
+    channel = d.getVar("RUSTC_BUILD_CHANNEL")
+    if channel is None:
        channel = "stable"
 
     return channel
 
 
 def rustc_version(d):
-    channel = d.expand("${RUSTC_BUILD_CHANNEL}")
+    channel = d.getVar("RUSTC_BUILD_CHANNEL")
     if channel == "nightly":
         return "nightly"
     elif channel == "beta":
         return "beta"
-    elif channel == "stable":
+    elif channel == "stable" or channel is None:
         return d.expand("${PV}")
 
 
@@ -429,7 +429,7 @@ python do_configure() {
     config.set(target_section, "cc", e(d.expand("${RUST_BUILD_CC}")))
 
     # [rust]
-    channel = d.expand("${TARGET_RUSTC_CHANNEL}")
+    channel = d.getVar("TARGET_RUSTC_CHANNEL")
     config.add_section("rust")
     config.set("rust", "rpath", e(True))
     config.set("rust", "channel", e(channel))
